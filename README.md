@@ -32,4 +32,23 @@ Open the URL printed by Vite, usually `http://localhost:5173`.
 
 React, Vite, FastAPI, SQLite, Pydantic, and the official Google Gen AI SDK.
 
+## Architecture
+
+```mermaid
+flowchart LR
+    UI[React workspace] --> API[FastAPI API]
+    API --> DB[(SQLite)]
+    API --> Agent[Bounded agent workflow]
+    Agent --> Gemini[Gemini API]
+    Agent --> Tools[Validated support tools]
+    Tools --> DB
+    Tools --> Approval[Human approval]
+    Approval --> DB
+```
+
+The frontend sends customer and order requests to FastAPI. The agent workflow
+uses Gemini for tool selection, validates every tool call, reads support data
+from SQLite, and pauses write operations until the user explicitly approves
+them.
+
 Never commit real API keys. Use `.env.example` as a reference for configuration.
