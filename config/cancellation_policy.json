@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "max_hours_after_purchase": 24,
+  "allowed_order_statuses": ["pending", "confirmed", "processing"],
+  "allowed_shipment_statuses": ["pending"],
+  "allowed_return_statuses": ["rejected", "cancelled"]
+}
