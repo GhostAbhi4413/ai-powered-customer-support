@@ -35,10 +35,25 @@ def run(model, service, customer_id, request, max_steps):
         if not calls or len(calls) > 8:
             raise SupportError(502, 'AI returned an invalid tool response')
         # Validate the entire batch before executing any call; approval is terminal.
-        try:
-            parsed = [(call, INPUTS[call.name].model_validate(call.args or {})) for call in calls]
-        except (KeyError, ValidationError, TypeError):
+        if any(call.name not in INPUTS for call in calls):
             raise SupportError(502, 'AI returned invalid tool arguments') from None
+        invalid = []
+        parsed = []
+        for call in calls:
+            try:
+                parsed.append((call, INPUTS[call.name].model_validate(call.args or {})))
+            except (ValidationError, TypeError):
+                invalid.append(call)
+        if invalid:
+            contents.append(content)
+            contents.append(types.Content(role='tool', parts=[types.Part(function_response=types.FunctionResponse(
+                name=call.name,
+                id=call.id,
+                response={'tool': call.name, 'status': 'error',
+                          'detail': 'Required tool arguments are missing or invalid. Retry with all required fields.'},
+            )) for call in invalid]))
+            event(request.request_id, step, 'workflow', 'invalid_arguments')
+            continue
         if any(c.name in WRITES or c.name == 'final_response' for c, _ in parsed) and len(parsed) != 1:
             raise SupportError(502, 'AI must propose or finish one operation at a time')
         contents.append(content)  # Preserve full provider content and thought signatures.

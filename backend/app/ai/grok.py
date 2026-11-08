@@ -45,6 +45,18 @@ class GroqModel:
 
         return expand(schema)
 
+    @staticmethod
+    def _relax_required(schema):
+        """Let Groq return incomplete calls so the workflow can request a retry."""
+        if isinstance(schema, dict):
+            schema.pop('required', None)
+            for value in schema.values():
+                GroqModel._relax_required(value)
+        elif isinstance(schema, list):
+            for value in schema:
+                GroqModel._relax_required(value)
+        return schema
+
     def __init__(self, settings):
         if settings.groq_api_key is None or not settings.groq_api_key.get_secret_value():
             raise SupportError(503, 'Groq credentials are not configured')
@@ -65,7 +77,7 @@ class GroqModel:
             description=(('Propose this operation for human approval; does not execute it. '
                           if name in ('update_address', 'request_return', 'cancel_order') else '')
                          + descriptions[name]),
-            parameters_json_schema=self._inline_refs(model.model_json_schema()))
+            parameters_json_schema=self._relax_required(self._inline_refs(model.model_json_schema())))
             for name, model in INPUTS.items()]
         self.tools = [{'type': 'function', 'function': {
             'name': declaration.name,
