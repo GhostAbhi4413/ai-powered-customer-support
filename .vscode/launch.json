@@ -18,7 +18,7 @@
       "console": "integratedTerminal",
       "envFile": "${workspaceFolder}/.env",
       "env": {
-        "APP_GROQ_MODEL": "openai/gpt-oss-20b"
+        "APP_GROQ_MODEL": "openai/gpt-oss-120b"
       },
       "serverReadyAction": {
         "action": "openExternally",
