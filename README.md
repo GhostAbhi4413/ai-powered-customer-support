@@ -1,6 +1,6 @@
 # AI-Powered Customer Support
 
-A customer-support workspace with a React frontend, FastAPI backend, SQLite persistence, and Grok-powered tool calling.
+A customer-support workspace with a React frontend, FastAPI backend, SQLite persistence, and Groq-powered tool calling.
 
 ## Features
 
@@ -14,8 +14,8 @@ A customer-support workspace with a React frontend, FastAPI backend, SQLite pers
 From the project root:
 
 ```powershell
-$env:XAI_API_KEY = "your-xai-api-key"
-$env:APP_XAI_MODEL = "grok-4.3"
+$env:GROQ_API_KEY = "your-groq-api-key"
+$env:APP_GROQ_MODEL = "llama-3.3-70b-versatile"
 .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
@@ -40,7 +40,7 @@ flowchart LR
     UI[React workspace] --> API[FastAPI API]
     API --> DB[(SQLite)]
     API --> Agent[Bounded agent workflow]
-    Agent --> Grok[Grok / xAI API]
+    Agent --> Groq[Groq API]
     Agent --> Tools[Validated support tools]
     Tools --> DB
     Tools --> Approval[Human approval]
@@ -48,7 +48,7 @@ flowchart LR
 ```
 
 The frontend sends customer and order requests to FastAPI. The agent workflow
-uses Grok for tool selection, validates every tool call, reads support data
+uses Groq for tool selection, validates every tool call, reads support data
 from SQLite, and pauses write operations until the user explicitly approves
 them.
 
@@ -57,7 +57,7 @@ them.
 Business rules are centralized in [`config/cancellation_policy.json`](./config/cancellation_policy.json).
 It contains both cancellation rules and return rules, including the 30-day return
 window, business descriptions, and demo scenarios. The backend validates and
-enforces this document, and the validated policy context is provided to Grok
-for explanations. Grok can propose an action, but it cannot bypass the policy.
+enforces this document, and the validated policy context is provided to Groq
+for explanations. Groq can propose an action, but it cannot bypass the policy.
 
 Never commit real API keys. Use `.env.example` as a reference for configuration.

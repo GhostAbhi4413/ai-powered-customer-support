@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ['http://localhost:5173', 'http://127.0.0.1:5173']
     return_window_days: int = Field(default=30, ge=1, le=365)
     cancellation_policy_path: Path = DEFAULT_POLICY
-    xai_api_key: SecretStr | None = Field(default=None, validation_alias='XAI_API_KEY')
-    xai_model: str = 'grok-4.3'
+    groq_api_key: SecretStr | None = Field(default=None, validation_alias='GROQ_API_KEY')
+    groq_model: str = 'llama-3.3-70b-versatile'
     agent_max_steps: int = Field(default=6, ge=1, le=12)
 
 

@@ -13,7 +13,7 @@ from backend.app.config import Settings
 from backend.app.db.database import initialize, connection
 from backend.app.db.__main__ import seed_demo
 from backend.app.main import create_app
-from backend.app.ai.grok import GrokModel
+from backend.app.ai.grok import GroqModel
 from backend.app.services.support import SupportError
 
 
@@ -133,7 +133,7 @@ class AgentTests(unittest.TestCase):
 
     def test_missing_credentials_fail_closed(self):
         with self.assertRaises(SupportError) as caught:
-            GrokModel(Settings(xai_api_key=None))
+            GroqModel(Settings(groq_api_key=None))
         self.assertEqual(caught.exception.status,503)
 
     def test_approval_cannot_cross_customer(self):
@@ -176,13 +176,13 @@ class AgentTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*) FROM agent_actions').fetchone()[0],0)
 
     def test_sdk_retries_and_timeout_are_bounded(self):
-        settings=Settings(xai_api_key='test-only-key')
+        settings=Settings(groq_api_key='test-only-key')
         completion = {'choices': [{'message': {'tool_calls': [{'id': 'call-1', 'type': 'function', 'function': {'name': 'final_response', 'arguments': '{"message":"Hello"}'}}]}}]}
         with patch('backend.app.ai.grok.httpx.Client') as constructor, patch('backend.app.ai.grok.time.sleep'):
-            model=GrokModel(settings)
+            model=GroqModel(settings)
             mock=constructor.return_value.post
-            rate_limited = httpx.Response(429, request=httpx.Request('POST', 'https://api.x.ai/v1/chat/completions'))
-            success = httpx.Response(200, json=completion, request=httpx.Request('POST', 'https://api.x.ai/v1/chat/completions'))
+            rate_limited = httpx.Response(429, request=httpx.Request('POST', 'https://api.groq.com/openai/v1/chat/completions'))
+            success = httpx.Response(200, json=completion, request=httpx.Request('POST', 'https://api.groq.com/openai/v1/chat/completions'))
             mock.side_effect=[rate_limited, success]
             model.generate([])
             self.assertEqual(mock.call_count,2)

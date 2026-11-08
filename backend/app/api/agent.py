@@ -1,4 +1,4 @@
-"""Grok-powered chat and a separate explicit human confirmation endpoint."""
+"""Groq-powered chat and a separate explicit human confirmation endpoint."""
 from uuid import UUID
 from fastapi import APIRouter, Request
 from backend.app.ai.contracts import AgentResponse, ChatRequest, ApprovalRequest, ToolResult

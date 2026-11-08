@@ -1,4 +1,4 @@
-"""xAI Grok adapter using the OpenAI-compatible chat-completions API."""
+"""Groq adapter using its OpenAI-compatible chat-completions API."""
 import json
 import logging
 import time
@@ -8,7 +8,7 @@ from backend.app.services.support import SupportError
 from backend.app.services.cancellation_policy import CancellationPolicy
 from .contracts import INPUTS
 
-logger = logging.getLogger('support.grok')
+logger = logging.getLogger('support.groq')
 
 SYSTEM_PROMPT = '''You are a customer support assistant. The server loads the
 cancellation and return rules from its JSON policy document and enforces them
@@ -23,7 +23,7 @@ claim they have executed. Never offer to bypass business rules or authorize a
 refund. Finish by calling final_response with a concise factual message.'''
 
 
-class GrokModel:
+class GroqModel:
     @staticmethod
     def _inline_refs(schema):
         definitions = schema.get('$defs', {})
@@ -43,9 +43,9 @@ class GrokModel:
         return expand(schema)
 
     def __init__(self, settings):
-        if settings.xai_api_key is None or not settings.xai_api_key.get_secret_value():
-            raise SupportError(503, 'Grok credentials are not configured')
-        self.model = settings.xai_model
+        if settings.groq_api_key is None or not settings.groq_api_key.get_secret_value():
+            raise SupportError(503, 'Groq credentials are not configured')
+        self.model = settings.groq_model
         policy = CancellationPolicy.load(settings.cancellation_policy_path)
         declarations = [types.FunctionDeclaration(
             name=name,
@@ -61,8 +61,8 @@ class GrokModel:
         }} for declaration in declarations]
         self.system_prompt = SYSTEM_PROMPT + '\nValidated business policy context:\n' + policy.model_dump_json(exclude={'demo_scenarios'})
         self.client = httpx.Client(
-            base_url='https://api.x.ai/v1',
-            headers={'Authorization': f'Bearer {settings.xai_api_key.get_secret_value()}', 'Content-Type': 'application/json'},
+            base_url='https://api.groq.com/openai/v1',
+            headers={'Authorization': f'Bearer {settings.groq_api_key.get_secret_value()}', 'Content-Type': 'application/json'},
             timeout=15.0,
             trust_env=False)
 
@@ -121,19 +121,19 @@ class GrokModel:
                     provider_detail = error.get('message', '') if isinstance(error, dict) else str(error)
                 except (ValueError, TypeError):
                     provider_detail = ''
-                logger.warning('Grok API request failed with provider status %s: %s', code, provider_detail)
+                logger.warning('Groq API request failed with provider status %s: %s', code, provider_detail)
                 if code not in (429, 500, 502, 503, 504) or attempt == 1:
                     if code in (400, 401, 403, 404):
-                        raise SupportError(503, 'Grok API key or model configuration is invalid') from None
+                        raise SupportError(503, 'Groq API key or model configuration is invalid') from None
                     if code == 429:
-                        raise SupportError(503, 'Grok quota or rate limit reached; please try later') from None
-                    raise SupportError(503, 'Grok service unavailable; please try later') from None
+                        raise SupportError(503, 'Groq quota or rate limit reached; please try later') from None
+                    raise SupportError(503, 'Groq service unavailable; please try later') from None
             except (httpx.TransportError, TimeoutError):
-                logger.warning('Grok API request could not connect or timed out')
+                logger.warning('Groq API request could not connect or timed out')
                 if attempt == 1:
-                    raise SupportError(504, 'Grok request timed out or could not connect') from None
+                    raise SupportError(504, 'Groq request timed out or could not connect') from None
             except (KeyError, TypeError, ValueError):
-                raise SupportError(502, 'Grok returned an invalid response') from None
+                raise SupportError(502, 'Groq returned an invalid response') from None
             time.sleep(0.25)
 
     def close(self):

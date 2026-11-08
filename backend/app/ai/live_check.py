@@ -7,26 +7,26 @@ from backend.app.db.database import initialize
 from backend.app.db.__main__ import seed_demo
 from backend.app.services.support import SupportService
 from .contracts import ChatRequest
-from .grok import GrokModel
+from .grok import GroqModel
 from .workflow import run
 
 
 def main():
     settings = Settings()
-    if settings.xai_api_key is None or not settings.xai_api_key.get_secret_value():
-        print('SKIPPED: XAI_API_KEY is not available in the process environment.')
+    if settings.groq_api_key is None or not settings.groq_api_key.get_secret_value():
+        print('SKIPPED: GROQ_API_KEY is not available in the process environment.')
         return
     with tempfile.TemporaryDirectory() as folder:
         settings = settings.model_copy(update={'database_path':Path(folder)/'live.sqlite3'})
         initialize(settings.database_path)
         seed_demo(settings.database_path)
-        model = GrokModel(settings)
+        model = GroqModel(settings)
         try:
             result = run(model, SupportService(settings), 1,
                 ChatRequest(request_id=uuid4(), customer_id=1, message='Check the current status of order 1 using get_order, then give a brief answer.'), settings.agent_max_steps)
             assert result.status == 'completed'
             assert any(t.tool == 'get_order' and t.status == 'ok' for t in result.tools)
-            print('PASS: live Grok get_order tool call and structured final response verified.')
+            print('PASS: live Groq get_order tool call and structured final response verified.')
         finally:
             model.close()
 
