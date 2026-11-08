@@ -3,5 +3,10 @@
   "max_hours_after_purchase": 24,
   "allowed_order_statuses": ["pending", "confirmed", "processing"],
   "allowed_shipment_statuses": ["pending"],
-  "allowed_return_statuses": ["rejected", "cancelled"]
+  "allowed_return_statuses": ["rejected", "cancelled"],
+  "return_policy": {
+    "window_days": 30,
+    "required_order_status": "delivered",
+    "required_shipment_status": "delivered"
+  }
 }

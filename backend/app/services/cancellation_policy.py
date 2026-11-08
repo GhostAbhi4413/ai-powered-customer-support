@@ -1,4 +1,4 @@
-"""Validated, declarative cancellation policy; no executable rules in JSON."""
+"""Validated, declarative cancellation and return policies."""
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Literal
@@ -16,6 +16,15 @@ class CancellationPolicy(BaseModel):
     allowed_order_statuses: list[Literal['pending', 'confirmed', 'processing']] = Field(min_length=1)
     allowed_shipment_statuses: list[Literal['pending']] = Field(min_length=1)
     allowed_return_statuses: list[Literal['rejected', 'cancelled']]
+
+    class ReturnPolicy(BaseModel):
+        model_config = ConfigDict(extra='forbid', strict=True, frozen=True)
+
+        window_days: int = Field(gt=0, le=365)
+        required_order_status: Literal['delivered']
+        required_shipment_status: Literal['delivered']
+
+    return_policy: ReturnPolicy
 
     @classmethod
     def load(cls, path):

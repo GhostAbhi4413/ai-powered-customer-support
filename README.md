@@ -51,4 +51,11 @@ uses Gemini for tool selection, validates every tool call, reads support data
 from SQLite, and pauses write operations until the user explicitly approves
 them.
 
+## Policy document
+
+Business rules are centralized in [`config/cancellation_policy.json`](./config/cancellation_policy.json).
+It contains both cancellation rules and return rules, including the 30-day return
+window. The backend validates and enforces this document; Gemini can propose an
+action, but it cannot bypass the policy.
+
 Never commit real API keys. Use `.env.example` as a reference for configuration.

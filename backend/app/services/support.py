@@ -13,7 +13,6 @@ class SupportError(Exception):
 class SupportService:
     def __init__(self, settings, clock=None):
         self.path = settings.database_path
-        self.return_window_days = settings.return_window_days
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.cancellation_policy = CancellationPolicy.load(settings.cancellation_policy_path)
 
@@ -60,7 +59,8 @@ class SupportService:
         def guard(db):
             order = self.order(customer_id, order_id, db)
             shipments = order['shipments']
-            if order['status'] != 'delivered' or not shipments or any(s['status'] != 'delivered' or not s['delivered_at'] for s in shipments):
+            policy = self.cancellation_policy.return_policy
+            if order['status'] != policy.required_order_status or not shipments or any(s['status'] != policy.required_shipment_status or not s['delivered_at'] for s in shipments):
                 raise SupportError(409, 'Only fully delivered orders can be returned')
             try:
                 dates = [datetime.fromisoformat(s['delivered_at'].replace('Z', '+00:00')) for s in shipments]
@@ -68,7 +68,7 @@ class SupportService:
             except ValueError:
                 raise SupportError(409, 'Delivery date is unavailable') from None
             now = self.clock()
-            if any(d > now or now > d + timedelta(days=self.return_window_days) for d in dates):
+            if any(d > now or now > d + timedelta(days=policy.window_days) for d in dates):
                 raise SupportError(409, 'Order is outside the return window')
         try:
             result_id = repo.create_return(self.path, order_id, customer_id, request.reason, [(i.order_item_id, i.quantity) for i in request.items], guard=guard)
