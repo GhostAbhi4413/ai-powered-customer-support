@@ -11,6 +11,10 @@ DEFAULT_POLICY = Path(__file__).resolve().parents[3] / 'config' / 'cancellation_
 class CancellationPolicy(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, frozen=True)
 
+    policy_name: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    currency: Literal['INR']
+    last_updated: str = Field(min_length=1)
     version: Literal[1]
     max_hours_after_purchase: int = Field(gt=0, le=8760)
     allowed_order_statuses: list[Literal['pending', 'confirmed', 'processing']] = Field(min_length=1)
@@ -24,7 +28,16 @@ class CancellationPolicy(BaseModel):
         required_order_status: Literal['delivered']
         required_shipment_status: Literal['delivered']
 
+    class DemoScenario(BaseModel):
+        model_config = ConfigDict(extra='forbid', strict=True, frozen=True)
+
+        name: str = Field(min_length=1)
+        operation: Literal['cancel_order', 'request_return']
+        outcome: Literal['approved', 'rejected', 'needs_review']
+        explanation: str = Field(min_length=1)
+
     return_policy: ReturnPolicy
+    demo_scenarios: list[DemoScenario] = Field(min_length=1)
 
     @classmethod
     def load(cls, path):

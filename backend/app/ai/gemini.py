@@ -4,6 +4,7 @@ import httpx
 from google import genai
 from google.genai import errors, types
 from backend.app.services.support import SupportError
+from backend.app.services.cancellation_policy import CancellationPolicy
 from .contracts import INPUTS
 
 SYSTEM_PROMPT = '''You are a customer support assistant. The server loads the
@@ -25,6 +26,8 @@ class GeminiModel:
         if settings.gemini_api_key is None or not settings.gemini_api_key.get_secret_value():
             raise SupportError(503, 'Gemini credentials are not configured')
         self.model = settings.gemini_model
+        policy = CancellationPolicy.load(settings.cancellation_policy_path)
+        policy_context = policy.model_dump_json(exclude={'demo_scenarios'})
         self.client = genai.Client(api_key=settings.gemini_api_key.get_secret_value(),
             http_options=types.HttpOptions(timeout=15000,
                 retry_options=types.HttpRetryOptions(attempts=1),
@@ -32,7 +35,8 @@ class GeminiModel:
         declarations = [types.FunctionDeclaration(name=name, description=(
             'Propose this operation for human approval; does not execute it.' if name in ('update_address','request_return','cancel_order') else name.replace('_',' ')),
             parameters_json_schema=model.model_json_schema()) for name, model in INPUTS.items()]
-        self.config = types.GenerateContentConfig(system_instruction=SYSTEM_PROMPT,
+        self.config = types.GenerateContentConfig(system_instruction=(
+            SYSTEM_PROMPT + '\nValidated business policy context:\n' + policy_context),
             tools=[types.Tool(function_declarations=declarations)],
             automatic_function_calling=types.AutomaticFunctionCallingConfig(disable=True),
             tool_config=types.ToolConfig(function_calling_config=types.FunctionCallingConfig(mode='ANY')),

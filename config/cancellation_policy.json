@@ -1,4 +1,8 @@
 {
+  "policy_name": "Customer Support Demo Policy",
+  "description": "Rules for order cancellation and returns in the customer support workspace.",
+  "currency": "INR",
+  "last_updated": "2026-11-08",
   "version": 1,
   "max_hours_after_purchase": 24,
   "allowed_order_statuses": ["pending", "confirmed", "processing"],
@@ -8,5 +12,31 @@
     "window_days": 30,
     "required_order_status": "delivered",
     "required_shipment_status": "delivered"
-  }
+  },
+  "demo_scenarios": [
+    {
+      "name": "Cancel a recently placed order",
+      "operation": "cancel_order",
+      "outcome": "approved",
+      "explanation": "A pending, confirmed, or processing order can be cancelled within 24 hours when it has no shipping activity."
+    },
+    {
+      "name": "Cancel after the deadline",
+      "operation": "cancel_order",
+      "outcome": "rejected",
+      "explanation": "Cancellation is rejected after 24 hours from purchase or once shipping has started."
+    },
+    {
+      "name": "Return a delivered item",
+      "operation": "request_return",
+      "outcome": "approved",
+      "explanation": "A fully delivered order can be returned within 30 days of delivery, subject to item quantity checks."
+    },
+    {
+      "name": "Return an order still in transit",
+      "operation": "request_return",
+      "outcome": "needs_review",
+      "explanation": "Returns require every shipment to be delivered and to have a valid delivery timestamp."
+    }
+  ]
 }
