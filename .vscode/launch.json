@@ -18,7 +18,7 @@
       "console": "integratedTerminal",
       "envFile": "${workspaceFolder}/.env",
       "env": {
-        "APP_GROQ_MODEL": "llama-3.3-70b-versatile"
+        "APP_GROQ_MODEL": "llama-3.1-8b-instant"
       },
       "serverReadyAction": {
         "action": "openExternally",

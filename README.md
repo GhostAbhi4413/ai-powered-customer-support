@@ -15,7 +15,7 @@ From the project root:
 
 ```powershell
 $env:GROQ_API_KEY = "your-groq-api-key"
-$env:APP_GROQ_MODEL = "llama-3.3-70b-versatile"
+$env:APP_GROQ_MODEL = "llama-3.1-8b-instant"
 .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 
