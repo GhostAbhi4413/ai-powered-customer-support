@@ -117,7 +117,8 @@ class GrokModel:
             except httpx.HTTPStatusError as exc:
                 code = exc.response.status_code
                 try:
-                    provider_detail = exc.response.json().get('error', {}).get('message', '')
+                    error = exc.response.json().get('error', '')
+                    provider_detail = error.get('message', '') if isinstance(error, dict) else str(error)
                 except (ValueError, TypeError):
                     provider_detail = ''
                 logger.warning('Grok API request failed with provider status %s: %s', code, provider_detail)
