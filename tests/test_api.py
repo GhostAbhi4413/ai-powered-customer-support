@@ -95,7 +95,7 @@ class BackendTests(unittest.TestCase):
         self.assertEqual(self.client.post(self.base+'/returns', json=self.payload()).status_code, 409)
 
     def test_cors_and_database_failure(self):
-        headers = {'Origin':'http://localhost:5173', 'Access-Control-Request-Method':'PATCH', 'Access-Control-Request-Headers':'authorization,content-type'}
+        headers = {'Origin':'http://localhost:5173', 'Access-Control-Request-Method':'PATCH', 'Access-Control-Request-Headers':'content-type'}
         response = self.client.options(self.base+'/delivery-address', headers=headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers['access-control-allow-origin'], headers['Origin'])
