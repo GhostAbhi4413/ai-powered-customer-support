@@ -1,5 +1,6 @@
 """Official Google SDK adapter with manual tool dispatch and bounded retries."""
 import time
+import logging
 import httpx
 from google import genai
 from google.genai import errors, types
@@ -19,6 +20,8 @@ Write tools only propose changes for separate human approval: never claim they
 have executed. Never offer to bypass business rules or authorize a refund.
 Finish by calling final_response with a concise factual message. You have a bounded
 tool budget. No SQL, code execution, web access or authentication tools exist.'''
+
+logger = logging.getLogger('support.gemini')
 
 
 class GeminiModel:
@@ -47,9 +50,15 @@ class GeminiModel:
             try:
                 return self.client.models.generate_content(model=self.model, contents=contents, config=self.config)
             except errors.APIError as exc:
+                logger.warning('Gemini API request failed with provider status %s', exc.code)
                 if exc.code not in (429,500,502,503,504) or attempt == 1:
+                    if exc.code in (400,401,403,404):
+                        raise SupportError(503, 'Gemini API key or model configuration is invalid') from None
+                    if exc.code == 429:
+                        raise SupportError(503, 'Gemini quota or rate limit reached; please try later') from None
                     raise SupportError(503, 'AI service unavailable; please try later') from None
             except (httpx.TransportError, TimeoutError):
+                logger.warning('Gemini API request could not connect or timed out')
                 if attempt == 1:
                     raise SupportError(504, 'AI request timed out or could not connect') from None
             except Exception:
