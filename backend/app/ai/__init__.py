@@ -1,1 +1,1 @@
-"""Bounded Gemini orchestration with application-controlled tools."""
+"""Bounded Grok orchestration with application-controlled tools."""

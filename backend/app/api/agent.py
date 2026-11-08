@@ -1,10 +1,9 @@
-"""Authenticated chat and a separate explicit human confirmation endpoint."""
+"""Grok-powered chat and a separate explicit human confirmation endpoint."""
 from uuid import UUID
 from fastapi import APIRouter, Request
 from backend.app.ai.contracts import AgentResponse, ChatRequest, ApprovalRequest, ToolResult
 from backend.app.ai.actions import confirm
 from backend.app.ai.workflow import run, event
-from backend.app.ai.gemini import GeminiModel
 from backend.app.services.support import SupportError
 
 router = APIRouter(prefix='/agent', tags=['agent'])

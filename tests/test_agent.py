@@ -7,12 +7,13 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
-from google.genai import types, errors
+from google.genai import types
+import httpx
 from backend.app.config import Settings
 from backend.app.db.database import initialize, connection
 from backend.app.db.__main__ import seed_demo
 from backend.app.main import create_app
-from backend.app.ai.gemini import GeminiModel
+from backend.app.ai.grok import GrokModel
 from backend.app.services.support import SupportError
 
 
@@ -132,7 +133,7 @@ class AgentTests(unittest.TestCase):
 
     def test_missing_credentials_fail_closed(self):
         with self.assertRaises(SupportError) as caught:
-            GeminiModel(Settings(gemini_api_key=None))
+            GrokModel(Settings(xai_api_key=None))
         self.assertEqual(caught.exception.status,503)
 
     def test_approval_cannot_cross_customer(self):
@@ -175,17 +176,20 @@ class AgentTests(unittest.TestCase):
             self.assertEqual(db.execute('SELECT COUNT(*) FROM agent_actions').fetchone()[0],0)
 
     def test_sdk_retries_and_timeout_are_bounded(self):
-        settings=Settings(gemini_api_key='test-only-key')
-        with patch('backend.app.ai.gemini.genai.Client') as constructor, patch('backend.app.ai.gemini.time.sleep'):
-            model=GeminiModel(settings)
-            mock=constructor.return_value.models.generate_content
-            mock.side_effect=[errors.APIError(429,{'error':{'message':'rate limit'}}),response('final_response',{'message':'Hello'})]
+        settings=Settings(xai_api_key='test-only-key')
+        completion = {'choices': [{'message': {'tool_calls': [{'id': 'call-1', 'type': 'function', 'function': {'name': 'final_response', 'arguments': '{"message":"Hello"}'}}]}}]}
+        with patch('backend.app.ai.grok.httpx.Client') as constructor, patch('backend.app.ai.grok.time.sleep'):
+            model=GrokModel(settings)
+            mock=constructor.return_value.post
+            rate_limited = httpx.Response(429, request=httpx.Request('POST', 'https://api.x.ai/v1/chat/completions'))
+            success = httpx.Response(200, json=completion, request=httpx.Request('POST', 'https://api.x.ai/v1/chat/completions'))
+            mock.side_effect=[rate_limited, success]
             model.generate([])
             self.assertEqual(mock.call_count,2)
             mock.reset_mock()
-            mock.side_effect=TimeoutError('private provider text')
+            mock.side_effect=httpx.ReadTimeout('private provider text')
             with self.assertRaises(SupportError) as caught:
                 model.generate([])
             self.assertEqual(mock.call_count,2)
             self.assertNotIn('private',caught.exception.message)
-            self.assertEqual(constructor.call_args.kwargs['http_options'].timeout,15000)
+            self.assertEqual(constructor.call_args.kwargs['timeout'],15.0)

@@ -13,10 +13,10 @@ from backend.app.services.support import SupportError, SupportService
 
 from backend.app.config import get_settings
 from backend.app.api.agent import router as agent_router
-from backend.app.ai.gemini import GeminiModel
+from backend.app.ai.grok import GrokModel
 
 
-def create_app(settings=None, *, clock=None, model_factory=GeminiModel) -> FastAPI:
+def create_app(settings=None, *, clock=None, model_factory=GrokModel) -> FastAPI:
     settings = settings or get_settings()
 
     @asynccontextmanager
