@@ -24,6 +24,24 @@ refund. Finish by calling final_response with a concise factual message.'''
 
 
 class GrokModel:
+    @staticmethod
+    def _inline_refs(schema):
+        definitions = schema.get('$defs', {})
+
+        def expand(value):
+            if isinstance(value, dict):
+                reference = value.get('$ref')
+                if reference and reference.startswith('#/$defs/'):
+                    definition = definitions.get(reference.rsplit('/', 1)[-1])
+                    if definition is not None:
+                        return expand(definition)
+                return {key: expand(item) for key, item in value.items() if key != '$defs'}
+            if isinstance(value, list):
+                return [expand(item) for item in value]
+            return value
+
+        return expand(schema)
+
     def __init__(self, settings):
         if settings.xai_api_key is None or not settings.xai_api_key.get_secret_value():
             raise SupportError(503, 'Grok credentials are not configured')
@@ -34,7 +52,7 @@ class GrokModel:
             description=('Propose this operation for human approval; does not execute it.'
                          if name in ('update_address', 'request_return', 'cancel_order')
                          else name.replace('_', ' ')),
-            parameters_json_schema=model.model_json_schema())
+            parameters_json_schema=self._inline_refs(model.model_json_schema()))
             for name, model in INPUTS.items()]
         self.tools = [{'type': 'function', 'function': {
             'name': declaration.name,
@@ -98,7 +116,11 @@ class GrokModel:
                 return self._response(response.json())
             except httpx.HTTPStatusError as exc:
                 code = exc.response.status_code
-                logger.warning('Grok API request failed with provider status %s', code)
+                try:
+                    provider_detail = exc.response.json().get('error', {}).get('message', '')
+                except (ValueError, TypeError):
+                    provider_detail = ''
+                logger.warning('Grok API request failed with provider status %s: %s', code, provider_detail)
                 if code not in (429, 500, 502, 503, 504) or attempt == 1:
                     if code in (400, 401, 403, 404):
                         raise SupportError(503, 'Grok API key or model configuration is invalid') from None
