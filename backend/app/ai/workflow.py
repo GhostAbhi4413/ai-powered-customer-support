@@ -35,11 +35,11 @@ def run(model, service, customer_id, request, max_steps):
         if not calls or len(calls) > 8:
             raise SupportError(502, 'AI returned an invalid tool response')
         # Validate the entire batch before executing any call; approval is terminal.
-        if any(call.name not in INPUTS for call in calls):
-            raise SupportError(502, 'AI returned invalid tool arguments') from None
-        invalid = []
+        invalid = [call for call in calls if call.name not in INPUTS]
         parsed = []
         for call in calls:
+            if call.name not in INPUTS:
+                continue
             try:
                 parsed.append((call, INPUTS[call.name].model_validate(call.args or {})))
             except (ValidationError, TypeError):
@@ -50,7 +50,9 @@ def run(model, service, customer_id, request, max_steps):
                 name=call.name,
                 id=call.id,
                 response={'tool': call.name, 'status': 'error',
-                          'detail': 'Required tool arguments are missing or invalid. Retry with all required fields.'},
+                          'detail': ('Unknown tool name. Use only the tools listed in the system instructions.'
+                                     if call.name not in INPUTS else
+                                     'Required tool arguments are missing or invalid. Retry with all required fields.')},
             )) for call in invalid]))
             event(request.request_id, step, 'workflow', 'invalid_arguments')
             continue

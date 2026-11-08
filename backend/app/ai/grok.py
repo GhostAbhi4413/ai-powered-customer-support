@@ -23,6 +23,9 @@ claim they have executed. Never offer to bypass business rules or authorize a
 refund. For get_order and get_shipping, always include the positive integer
 order_id argument from the user's request; never call either tool with empty
 arguments. For final_response, always include the required message argument.
+Valid tool names are get_customer, list_orders, get_order, get_shipping,
+update_address, request_return, cancel_order, and final_response. Never invent
+or call any other tool name.
 Finish by calling final_response with a concise factual message.'''
 
 
@@ -131,6 +134,7 @@ class GroqModel:
             'messages': [{'role': 'system', 'content': self.system_prompt}] + self._messages(contents),
             'tools': self.tools,
             'tool_choice': 'required',
+            'disable_tool_validation': True,
             'parallel_tool_calls': False,
             'reasoning_effort': 'none',
             'max_tokens': 1000,
