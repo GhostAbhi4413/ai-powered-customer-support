@@ -107,6 +107,7 @@ class GroqModel:
             'tools': self.tools,
             'tool_choice': 'required',
             'parallel_tool_calls': False,
+            'reasoning_effort': 'none',
             'max_tokens': 1000,
         }
         for attempt in range(2):

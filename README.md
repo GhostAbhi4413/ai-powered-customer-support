@@ -15,7 +15,7 @@ From the project root:
 
 ```powershell
 $env:GROQ_API_KEY = "your-groq-api-key"
-$env:APP_GROQ_MODEL = "openai/gpt-oss-120b"
+$env:APP_GROQ_MODEL = "qwen/qwen3.8-27b"
 .\.venv\Scripts\python.exe -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
 ```
 

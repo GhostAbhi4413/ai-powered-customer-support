@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     return_window_days: int = Field(default=30, ge=1, le=365)
     cancellation_policy_path: Path = DEFAULT_POLICY
     groq_api_key: SecretStr | None = Field(default=None, validation_alias='GROQ_API_KEY')
-    groq_model: str = 'openai/gpt-oss-120b'
+    groq_model: str = 'qwen/qwen3.8-27b'
     agent_max_steps: int = Field(default=6, ge=1, le=12)
 
 
